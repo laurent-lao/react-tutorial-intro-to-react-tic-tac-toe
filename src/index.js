@@ -2,23 +2,6 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 
-
-/* Replacing the Square class into a function component
-  class Square extends React.Component {
-  
-    render() {
-    return (
-        // Common Mistake: onClick={alert('click')}
-        // This would fire the alert every time the component re-renders
-      <button className="square" 
-        onClick={() => this.props.onClick()}  // onClick() is defined in Board
-      >
-        {this.props.value}
-      </button>
-    );
-  }
-}*/
-
 function Square(props) {
   return (
     <button className="square"
@@ -31,37 +14,6 @@ function Square(props) {
 }
 
 class Board extends React.Component {
-  
-  /* Deleted: squares and onClick is from Game
-  constructor(props)  {
-    super(props);
-    this.state = {
-      squares: Array(9).fill(null),
-      xIsNext: true,
-    }
-  }
-  */
-
-  /* Deleted: moved to Game
-  handleClick(i) {
-    // Here: Use the features of Immutatibility
-    // It will allow us to undo/redo (time travel)
-    // React will also detect when to re-render (this is about pure components)
-    const squares = this.state.squares.slice(); // creates a copy of Square Array
-    
-    // Don't allow other clicks when there is a winner
-    if (calculateWiner(squares) || squares[i]) {
-      return;
-    }
-
-    
-    squares[i] = this.state.xIsNext ? 'X' : 'O';
-    this.setState({
-      squares: squares,
-      xIsNext: !this.state.xIsNext,
-    });
-  }
-  */
  
   renderSquare(i) {
     return (
@@ -103,7 +55,7 @@ class Game extends React.Component {
       history: [{
         squares: Array(9).fill(null),
       }],
-
+      stepNumber: 0,
       xIsNext: true,
     };
   }
@@ -112,8 +64,8 @@ class Game extends React.Component {
     // Here: Use the features of Immutatibility
     // It will allow us to undo/redo (time travel)
     // React will also detect when to re-render (this is about pure components)
-    const history = this.state.history;
-    const current = history[history.length - 1];
+    const history = this.state.history.slice(0, this.state.stepNumber + 1); // Ensures that throw away any new moves from that point
+    const current = history[history.length - 1]; 
     const squares = current.squares.slice(); // creates a copy of Square Array
     
     // Don't allow other clicks when there is a winner
@@ -122,20 +74,45 @@ class Game extends React.Component {
     }
 
     squares[i] = this.state.xIsNext ? 'X' : 'O';
-    
+
+    // setState to modify state values created in constructor
     this.setState({
-      // history (from constructor) gets history (the const) concat with squares
+      // history (from state) gets history (the const) concat with squares
       history: history.concat([{
         squares: squares,
       }]),
+      stepNumber: history.length,
       xIsNext: !this.state.xIsNext,
+    });
+  }
+
+  jumpTo(step) {
+    this.setState({
+      stepNumber: step,
+      xIsNext: (step % 2) === 0, // Since X starts
     });
   }
 
   render() {
     const history = this.state.history;
-    const current = history[history.length - 1];
+    const current = history[this.state.stepNumber]; // so that current always renders the last move determined by stepNumber
     const winner = calculateWiner(current.squares);
+
+    // Mapping history
+    const moves = history.map((step, move) => {
+      const desc = move ?
+        'Go to move #' + move :
+        'Go to game start';
+      return (
+        <li key={move}>
+          <button
+            onClick={() => this.jumpTo(move)}
+          >
+            {desc}
+          </button>
+        </li>
+      )
+    });
 
     let status;
     if (winner) {
@@ -154,7 +131,7 @@ class Game extends React.Component {
         </div>
         <div className="game-info">
           <div>{status}</div>
-          <ol>{/* TODO */}</ol>
+          <ol>{moves}</ol>
         </div>
       </div>
     );
