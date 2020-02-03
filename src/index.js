@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 
+/* This version is the simple tic-tac-toe game  */
 
 /* Replacing the Square class into a function component
   class Square extends React.Component {
